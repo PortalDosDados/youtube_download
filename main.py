@@ -26,8 +26,8 @@ def baixar_video():
         audio_stream = yt.streams.filter(adaptive=True, type="audio", file_extension="mp4").order_by("abr").desc().first()
 
         # Download temporário
-        video_path = video_stream.download(output_path=destino, filename="temp_video.mp4")
-        audio_path = audio_stream.download(output_path=destino, filename="temp_audio.mp4")
+        video_path = video_stream.download(output_path=destino, filename="temp_video.mp4") # type: ignore
+        audio_path = audio_stream.download(output_path=destino, filename="temp_audio.mp4") # type: ignore
 
         # Sanitiza título para nome do arquivo
         titulo_sanitizado = re.sub(r'[<>:"/\\|?*]', "_", yt.title)
@@ -37,8 +37,8 @@ def baixar_video():
         os.system(f'ffmpeg -y -i "{video_path}" -i "{audio_path}" -c copy "{saida_path}"')
 
         # Remove arquivos temporários
-        os.remove(video_path)
-        os.remove(audio_path)
+        os.remove(video_path) # type: ignore
+        os.remove(audio_path) # type: ignore
 
         messagebox.showinfo("Sucesso", f"Vídeo salvo em:\n{saida_path}")
     
