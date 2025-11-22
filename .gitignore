@@ -1,0 +1,14 @@
+# --- Ambiente Virtual e Logs ---
+.venv/
+venv/
+env/
+/Scripts/
+__pycache__/
+
+# --- Configurações Locais e Senhas ---
+.env
+.vscode/
+
+# --- Arquivos de Sistema ---
+.DS_Store
+Thumbs.db
