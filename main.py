@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk, scrolledtext
 from pytubefix import YouTube
 from pytubefix.cli import on_progress
 from pathlib import Path
@@ -7,94 +7,223 @@ import os
 import re
 import subprocess
 import threading
-import imageio_ffmpeg  # <--- NOVA BIBLIOTECA AQUI
+import imageio_ffmpeg
+from groq import Groq
+
+# ==========================================
+# 1. FUNÇÕES AUXILIARES
+# ==========================================
+
 
 def limpar_nome_arquivo(titulo):
     return re.sub(r'[<>:"/\\|?*]', "_", titulo)
 
-# Função que roda em segundo plano
+# ==========================================
+# 2. LÓGICA: DOWNLOADER (ABA 1)
+# ==========================================
+# (Esta parte continua igual, pois funciona bem)
+
+
 def tarefa_download(url, botao, label_status):
     try:
         destino = Path.home() / "Downloads"
         destino.mkdir(exist_ok=True)
 
-        # 1. Obter informações
-        label_status.config(text="A analisar o vídeo...")
+        label_status.config(text="🔍 Analisando...", fg="blue")
         yt = YouTube(url, on_progress_callback=on_progress)
-        
         titulo_limpo = limpar_nome_arquivo(yt.title)
-        
-        # 2. Baixar Streams (Alta Qualidade)
-        label_status.config(text="A baixar vídeo (sem áudio)...")
-        video_stream = yt.streams.filter(adaptive=True, type="video", file_extension="mp4").order_by("resolution").desc().first()
-        nome_temp_video = f"temp_v_{titulo_limpo}.mp4"
-        video_path = video_stream.download(output_path=destino, filename=nome_temp_video)
 
-        label_status.config(text="A baixar áudio...")
-        audio_stream = yt.streams.filter(adaptive=True, type="audio", file_extension="mp4").order_by("abr").desc().first()
-        nome_temp_audio = f"temp_a_{titulo_limpo}.mp4"
-        audio_path = audio_stream.download(output_path=destino, filename=nome_temp_audio)
+        label_status.config(text="📥 Baixando Vídeo...", fg="orange")
+        video_stream = yt.streams.filter(
+            adaptive=True, type="video", file_extension="mp4").order_by("resolution").desc().first()
+        nome_v = f"temp_v_{titulo_limpo}.mp4"
+        video_path = video_stream.download(
+            output_path=destino, filename=nome_v)
 
-        # 3. Mesclar usando o FFmpeg embutido (A MÁGICA ACONTECE AQUI)
-        label_status.config(text="A processar (Juntando)...")
+        label_status.config(text="📥 Baixando Áudio...", fg="orange")
+        audio_stream = yt.streams.filter(
+            adaptive=True, type="audio", file_extension="mp4").order_by("abr").desc().first()
+        nome_a = f"temp_a_{titulo_limpo}.mp4"
+        audio_path = audio_stream.download(
+            output_path=destino, filename=nome_a)
+
+        label_status.config(text="⚙️ Unindo...", fg="blue")
         saida_path = destino / f"{titulo_limpo}.mp4"
 
-        # Pega o executável direto da biblioteca Python
         ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        cmd = [ffmpeg_exe, '-y', '-i',
+               str(video_path), '-i', str(audio_path), '-c', 'copy', str(saida_path)]
 
-        cmd = [
-            ffmpeg_exe, '-y',
-            '-i', str(video_path),
-            '-i', str(audio_path),
-            '-c', 'copy',
-            str(saida_path)
-        ]
-        
-        # Executa sem abrir janela preta
-        processo = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+        creation_flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        subprocess.run(cmd, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, creationflags=creation_flags)
 
-        # 4. Limpeza
-        if os.path.exists(video_path): os.remove(video_path)
-        if os.path.exists(audio_path): os.remove(audio_path)
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
 
-        if processo.returncode == 0:
-            label_status.config(text="Concluído!", fg="green")
-            messagebox.showinfo("Sucesso", f"Vídeo salvo em:\n{saida_path}")
-        else:
-            label_status.config(text="Erro na fusão", fg="red")
-            messagebox.showerror("Erro", f"Falha ao juntar arquivos.\n{processo.stderr.decode()}")
+        label_status.config(text="✅ Sucesso!", fg="green")
+        messagebox.showinfo("Sucesso", f"Salvo em:\n{saida_path}")
 
     except Exception as e:
-        label_status.config(text="Erro Geral", fg="red")
-        messagebox.showerror("Erro Crítico", f"Ocorreu um erro:\n{str(e)}")
+        label_status.config(text="❌ Erro", fg="red")
+        messagebox.showerror("Erro", str(e))
     finally:
-        botao.config(state=tk.NORMAL, text="Baixar Vídeo")
+        botao.config(state=tk.NORMAL, text="Baixar Vídeo (HD)")
+
 
 def iniciar_download():
-    url = entry_url.get()
+    url = entry_url_down.get()
     if not url:
-        messagebox.showwarning("Aviso", "Insira a URL.")
+        return
+    btn_down.config(state=tk.DISABLED, text="Aguarde...")
+    threading.Thread(target=tarefa_download, args=(
+        url, btn_down, lbl_status_down)).start()
+
+# ==========================================
+# 3. LÓGICA: IA WHISPER + LLAMA (A GRANDE MUDANÇA)
+# ==========================================
+
+
+def tarefa_gerar_post_via_audio(url, api_key, text_area, botao, label_status):
+    arquivo_audio_temp = "temp_audio_to_transcribe.mp4"  # Usaremos MP4 audio stream
+
+    try:
+        client = Groq(api_key=api_key)
+
+        # 1. Baixar APENAS o áudio do vídeo (leve e rápido)
+        label_status.config(text="📥 Baixando áudio do vídeo...", fg="blue")
+        yt = YouTube(url)
+
+        # Pega o stream de áudio mais leve possível para subir rápido
+        audio_stream = yt.streams.filter(only_audio=True).first()
+        if not audio_stream:
+            raise Exception("Não foi possível encontrar stream de áudio.")
+
+        audio_stream.download(filename=arquivo_audio_temp)
+
+        # 2. Enviar para Groq Whisper (Ouvir o áudio)
+        label_status.config(
+            text="👂 A IA está ouvindo (Transcrevendo)...", fg="purple")
+
+        with open(arquivo_audio_temp, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=(arquivo_audio_temp, file.read()),
+                model="whisper-large-v3",  # Modelo Multilíngue Poderoso
+                response_format="json",
+                # Força português (opcional, pode remover para auto-detect)
+                language="pt",
+                temperature=0.0
+            )
+
+        texto_transcrito = transcription.text
+
+        # Remove o arquivo temporário
+        if os.path.exists(arquivo_audio_temp):
+            os.remove(arquivo_audio_temp)
+
+        # 3. Gerar o Post com Llama 3
+        label_status.config(text="✍️ Escrevendo o post...", fg="purple")
+
+        prompt_sistema = """
+        Você é um Copywriter Especialista em LinkedIn.
+        Transforme a transcrição abaixo em um post viral.
+        Estrutura:
+        - Headline (Gancho) Curta e Impactante.
+        - Corpo estruturado com espaços e Bullet Points.
+        - Tom: Profissional, ensinando algo valioso.
+        - CTA (Chamada para Ação) no final.
+        """
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": prompt_sistema},
+                {"role": "user",
+                    "content": f"Transcrição:\n{texto_transcrito[:15000]}..."}
+            ],
+            model="llama-3.3-70b-versatile",
+        )
+
+        resultado = chat_completion.choices[0].message.content
+
+        # 4. Resultado
+        text_area.delete(1.0, tk.END)
+        text_area.insert(tk.END, resultado)
+        label_status.config(text="✅ Post Gerado com Sucesso!", fg="green")
+
+    except Exception as e:
+        label_status.config(text="❌ Erro", fg="red")
+        text_area.delete(1.0, tk.END)
+        text_area.insert(tk.END, f"ERRO:\n{str(e)}")
+        # Tenta limpar lixo se der erro
+        if os.path.exists(arquivo_audio_temp):
+            os.remove(arquivo_audio_temp)
+    finally:
+        botao.config(state=tk.NORMAL, text="✨ Gerar Post LinkedIn")
+
+
+def iniciar_geracao():
+    url = entry_url_ai.get()
+    api_key = entry_api.get()
+
+    if not url or not api_key:
+        messagebox.showwarning("Aviso", "Preencha URL e API Key.")
         return
 
-    botao_download.config(state=tk.DISABLED, text="A Baixar...")
-    t = threading.Thread(target=tarefa_download, args=(url, botao_download, lbl_status))
-    t.start()
+    btn_ai.config(state=tk.DISABLED, text="⏳ Processando...")
+    threading.Thread(target=tarefa_gerar_post_via_audio, args=(
+        url, api_key, txt_result, btn_ai, lbl_status_ai)).start()
 
-# --- GUI ---
+# ==========================================
+# 4. INTERFACE
+# ==========================================
+
+
 root = tk.Tk()
-root.title("Lancelot TubeDownloader (Portable)")
-root.geometry("550x250")
+root.title("Lancelot Suite V4 - AI Audio Engine")
+root.geometry("650x600")
 
-lbl_instrucao = tk.Label(root, text="Insira a URL do YouTube:")
-lbl_instrucao.pack(pady=10)
+notebook = ttk.Notebook(root)
+notebook.pack(expand=True, fill="both", padx=10, pady=10)
 
-entry_url = tk.Entry(root, width=60)
-entry_url.pack(pady=5)
+# ABA 1
+frame_down = tk.Frame(notebook, bg="#f5f5f5")
+notebook.add(frame_down, text="  📥 Baixar  ")
+tk.Label(frame_down, text="Link do Vídeo:", bg="#f5f5f5").pack(pady=(20, 5))
+entry_url_down = tk.Entry(frame_down, width=65)
+entry_url_down.pack(pady=5)
+btn_down = tk.Button(frame_down, text="Baixar (HD)", command=iniciar_download,
+                     bg="#2196F3", fg="white", font=("Arial", 10, "bold"))
+btn_down.pack(pady=15)
+lbl_status_down = tk.Label(frame_down, text="Pronto", bg="#f5f5f5", fg="gray")
+lbl_status_down.pack()
 
-botao_download = tk.Button(root, text="Baixar Vídeo", command=iniciar_download, bg="#007acc", fg="white", font=("Arial", 10, "bold"))
-botao_download.pack(pady=20)
+# ABA 2
+frame_ai = tk.Frame(notebook, bg="#f5f5f5")
+notebook.add(frame_ai, text="  🤖 LinkedIn (Whisper)  ")
+tk.Label(frame_ai, text="Este modo OUVE o vídeo (Funciona sem legenda!)",
+         bg="#f5f5f5", fg="#d35400", font=("Arial", 8, "bold")).pack(pady=(10, 0))
 
-lbl_status = tk.Label(root, text="Pronto para baixar", fg="gray")
-lbl_status.pack()
+tk.Label(frame_ai, text="1. Link do Vídeo:", bg="#f5f5f5",
+         font=("Arial", 9, "bold")).pack(pady=(10, 0))
+entry_url_ai = tk.Entry(frame_ai, width=65)
+entry_url_ai.pack(pady=5)
+
+tk.Label(frame_ai, text="2. API Key Groq:", bg="#f5f5f5",
+         font=("Arial", 9, "bold")).pack(pady=(10, 0))
+entry_api = tk.Entry(frame_ai, width=65, show="*")
+entry_api.pack(pady=5)
+
+btn_ai = tk.Button(frame_ai, text="✨ Gerar Post (Via Áudio)",
+                   command=iniciar_geracao, bg="#d35400", fg="white", font=("Arial", 10, "bold"))
+btn_ai.pack(pady=15)
+
+lbl_status_ai = tk.Label(
+    frame_ai, text="Aguardando...", bg="#f5f5f5", fg="gray")
+lbl_status_ai.pack()
+
+txt_result = scrolledtext.ScrolledText(frame_ai, width=75, height=15)
+txt_result.pack(pady=10)
 
 root.mainloop()
