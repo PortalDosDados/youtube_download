@@ -43,26 +43,42 @@ Para rodar este projeto, você precisa de:
 ```bash
 git clone [https://github.com/seu-usuario/lancelot-suite.git](https://github.com/seu-usuario/lancelot-suite.git)
 cd lancelot-suite
+```
+### 2. Crie um Ambiente Virtual (Window)
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-Para Baixar Vídeos:
-Vá na aba "📥 Baixar".
+### 3. Instale as Dependências
+```bash
+pip install -r requirements.txt
+```
+Nota: O requirements.txt deve conter: pytubefix, imageio-ffmpeg, groq, requests (opcional).
 
-Cole a URL do YouTube.
+## ▶️ Como Usar
 
-Clique em "Baixar (HD)".
+### Para Baixar Vídeos:
 
-O arquivo será salvo na sua pasta Downloads.
+1. Vá na aba "📥 Baixar".
 
-Para Gerar Posts (IA):
-Vá na aba "🤖 LinkedIn (V5)".
+2. Cole a URL do YouTube.
 
-Cole a URL do vídeo que deseja transformar em post.
+3. Clique em "Baixar (HD)".
 
-Cole sua API Key da Groq (começa com gsk_...).
+4. O arquivo será salvo na sua pasta Downloads.
 
-Clique em "✨ Gerar Post".
+### Para Gerar Posts (IA):
 
-Aguarde o processo (Download do áudio -> Transcrição -> Escrita).
+1. Vá na aba "🤖 LinkedIn (V5)".
+
+2. Cole a URL do vídeo que deseja transformar em post.
+
+3. Cole sua API Key da Groq (começa com gsk_...).
+
+4. Clique em "✨ Gerar Post".
+
+5. Aguarde o processo (Download do áudio -> Transcrição -> Escrita).
 
 ❓ Solução de Problemas Comuns
 Erro: "Model decommissioned"
