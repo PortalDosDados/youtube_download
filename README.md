@@ -50,7 +50,7 @@ Este projeto é uma aplicação desktop (GUI) desenvolvida em Python que resolve
 
 1.  **Clone o repositório**
     ```bash
-    git clone [https://github.com/SEU-USUARIO/youtube_download.git](https://github.com/SEU-USUARIO/youtube_download.git)
+    git clone [https://github.com/PortalDosDados/youtube_download.git](https://github.com/PortalDosDados/youtube_download.git)
     cd youtube_download
     ```
 
@@ -111,4 +111,4 @@ Este software foi desenvolvido para fins educacionais e de produtividade pessoal
 
 ---
 
-**Desenvolvido com 💙 e Python.**
+**Desenvolvido com 💙 por [PortalDosDados](https://github.com/PortalDosDados).**
