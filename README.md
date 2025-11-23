@@ -1,96 +1,114 @@
-# 🛡️ Lancelot Suite: YouTube Downloader & Content AI
+# 📺 YouTube Downloader & AI Content Generator
 
-> **Ferramenta Desktop para Automação de Conteúdo e Download de Vídeos.**
-> Transforma vídeos técnicos em posts virais para LinkedIn usando Inteligência Artificial de ponta.
+> **Uma ferramenta desktop completa para baixar vídeos em alta qualidade e gerar posts técnicos para LinkedIn usando Inteligência Artificial.**
 
-## 🚀 Visão Geral
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Functional-brightgreen)
 
-O **Lancelot Suite** é uma aplicação desktop desenvolvida em Python que resolve dois grandes problemas de produtividade:
-1.  **Download de Alta Qualidade:** Baixa vídeos do YouTube em 1080p/4K (unindo áudio e vídeo automaticamente).
-2.  **Repurposing de Conteúdo:** Ouve o áudio de um vídeo (mesmo sem legendas), transcreve usando o modelo **Whisper v3** e cria um post técnico para o LinkedIn usando o **Llama 3.3**, focado no estilo "Portal dos Dados".
+## 📖 Sobre o Projeto
 
----
+Este projeto é uma aplicação desktop (GUI) desenvolvida em Python que resolve dois problemas principais de criadores de conteúdo e estudantes:
 
-## 🛠️ Funcionalidades
-
-### Aba 1: Downloader Pro
-* ✅ Download de vídeos em máxima resolução (HD/4K).
-* ✅ Download de faixas de áudio separadas.
-* ✅ Fusão automática usando FFmpeg embutido (Portátil).
-* ✅ Barra de status em tempo real.
-
-### Aba 2: AI Content Generator (V5)
-* ✅ **Ouvido Absoluto:** Não depende das legendas do YouTube. O app baixa o áudio temporariamente e usa IA para ouvir.
-* ✅ **Transcrição Precisa:** Utiliza o modelo `whisper-large-v3` da Groq.
-* ✅ **Copywriting Técnico:** Gera posts formatados com bullet points, ganchos e CTA, seguindo o manual de marca do "Portal dos Dados".
-* ✅ **Modelo Atualizado:** Utiliza o `llama-3.3-70b-versatile`.
+1.  **Download de Vídeos:** Permite baixar vídeos do YouTube em máxima resolução (1080p, 4K), unindo automaticamente faixas de vídeo e áudio.
+2.  **Geração de Conteúdo com IA:** Utiliza modelos de ponta (Llama 3.3 e Whisper v3 via Groq) para "ouvir" o vídeo e escrever posts técnicos e virais para o LinkedIn, mesmo que o vídeo original não tenha legendas.
 
 ---
 
-## 📋 Pré-requisitos
+## ✨ Funcionalidades
 
-Para rodar este projeto, você precisa de:
+### 📥 Módulo Downloader
+- Download de vídeos em alta resolução (Adaptive Streams).
+- Fusão automática de Áudio + Vídeo (sem necessidade de instalar FFmpeg manualmente).
+- Download apenas de áudio (MP3/MP4).
+- Interface amigável com barra de progresso.
 
-1.  **Python 3.10 ou superior** instalado.
-2.  Uma **API Key da Groq** (Gratuita).
-    * Obtenha aqui: [https://console.groq.com/keys](https://console.groq.com/keys)
+### 🤖 Módulo AI Content (Content Repurposing)
+- **Transcrição via Áudio:** O sistema baixa o áudio temporariamente e usa o modelo **Whisper Large V3** para transcrever o conteúdo com alta precisão.
+- **Geração de Posts:** Transforma a transcrição em um post estruturado para LinkedIn (com ganchos, bullet points e CTA).
+- **Sem Dependência de Legendas:** Funciona com qualquer vídeo que tenha fala, independente de ter Closed Captions (CC) no YouTube.
 
 ---
 
-## 🔧 Instalação Passo a Passo
+## 🛠️ Tecnologias Utilizadas
 
-### 1. Clone ou Baixe o Repositório
-```bash
-git clone [https://github.com/seu-usuario/lancelot-suite.git](https://github.com/seu-usuario/lancelot-suite.git)
-cd lancelot-suite
-```
-### 2. Crie um Ambiente Virtual (Window)
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-```
+- **Linguagem:** Python 3.10+
+- **Interface Gráfica:** Tkinter (Nativo)
+- **Download engine:** `pytubefix`
+- **Processamento de Mídia:** `imageio-ffmpeg`
+- **Inteligência Artificial:** `groq` (API gratuita para inferência rápida de Llama e Whisper)
 
-### 3. Instale as Dependências
-```bash
-pip install -r requirements.txt
-```
-Nota: O requirements.txt deve conter: pytubefix, imageio-ffmpeg, groq, requests (opcional).
+---
 
-## ▶️ Como Usar
+## 🚀 Como Executar o Projeto
 
-### Para Baixar Vídeos:
+### Pré-requisitos
+1.  Ter o **Python** instalado.
+2.  Obter uma **API Key Gratuita** na [Groq Cloud](https://console.groq.com/keys).
 
-1. Vá na aba "📥 Baixar".
+### Passo a Passo
 
-2. Cole a URL do YouTube.
+1.  **Clone o repositório**
+    ```bash
+    git clone [https://github.com/SEU-USUARIO/youtube_download.git](https://github.com/SEU-USUARIO/youtube_download.git)
+    cd youtube_download
+    ```
 
-3. Clique em "Baixar (HD)".
+2.  **Crie um ambiente virtual (Recomendado)**
+    * No Windows:
+        ```bash
+        python -m venv .venv
+        .venv\Scripts\activate
+        ```
+    * No Linux/Mac:
+        ```bash
+        python3 -m venv .venv
+        source .venv/bin/activate
+        ```
 
-4. O arquivo será salvo na sua pasta Downloads.
+3.  **Instale as dependências**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### Para Gerar Posts (IA):
+4.  **Execute a aplicação**
+    ```bash
+    python app.py
+    ```
 
-1. Vá na aba "🤖 LinkedIn (V5)".
+---
 
-2. Cole a URL do vídeo que deseja transformar em post.
+## 📝 Como Usar
 
-3. Cole sua API Key da Groq (começa com gsk_...).
+### Aba 1: Baixar Vídeos
+1.  Cole a URL do vídeo do YouTube.
+2.  Clique em **"Baixar (HD)"**.
+3.  O vídeo será salvo automaticamente na sua pasta de **Downloads** do sistema.
 
-4. Clique em "✨ Gerar Post".
+### Aba 2: Gerar Post LinkedIn
+1.  Cole a URL do vídeo que deseja usar como base.
+2.  Insira sua **API Key da Groq** (ex: `gsk_...`).
+3.  Clique em **"✨ Gerar Post"**.
+4.  O sistema irá baixar o áudio, transcrever e gerar o texto na tela para você copiar.
 
-5. Aguarde o processo (Download do áudio -> Transcrição -> Escrita).
+---
 
-❓ Solução de Problemas Comuns
-Erro: "Model decommissioned"
+## 🤝 Contribuição
 
-Você está usando uma versão antiga do código. Certifique-se de que no app.py o modelo está definido como llama-3.3-70b-versatile.
+Contribuições são bem-vindas! Se você tiver uma ideia de melhoria:
 
-Erro: "FFmpeg not found"
+1.  Faça um Fork do projeto.
+2.  Crie uma Branch para sua Feature (`git checkout -b feature/NovaFeature`).
+3.  Faça o Commit (`git commit -m 'Adicionando nova feature'`).
+4.  Faça o Push (`git push origin feature/NovaFeature`).
+5.  Abra um Pull Request.
 
-O projeto usa a biblioteca imageio-ffmpeg para não exigir instalação manual. Tente reinstalar as dependências: pip install --force-reinstall imageio-ffmpeg.
+---
 
-Erro: "Connection Error"
+## ⚠️ Aviso Legal
 
-Verifique se há espaços em branco antes ou depois da sua API Key.
+Este software foi desenvolvido para fins educacionais e de produtividade pessoal. O download de conteúdo protegido por direitos autorais sem permissão do autor pode violar os Termos de Serviço do YouTube. Utilize com responsabilidade.
 
-Desative VPNs ou Firewalls que possam bloquear o Python.
+---
+
+**Desenvolvido com 💙 e Python.**
